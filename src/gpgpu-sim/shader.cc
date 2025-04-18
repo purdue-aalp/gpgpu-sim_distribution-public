@@ -2979,11 +2979,13 @@ void shader_core_ctx::register_cta_thread_exit(unsigned cta_num,
                                                kernel_info_t *kernel) {
   assert(m_cta_status[cta_num] > 0);
   m_cta_status[cta_num]--;
+  
   if (!m_cta_status[cta_num]) {
     // Increment the completed CTAs
     m_stats->ctas_completed++;
     m_gpu->inc_completed_cta();
     m_n_active_cta--;
+    printf("exiting cta %d sid %d \n",cta_num,this->m_sid);
     m_barriers.deallocate_barrier(cta_num);
     shader_CTA_count_unlog(m_sid, 1);
 
@@ -3817,7 +3819,10 @@ void barrier_set_t::allocate_barrier(unsigned cta_id, warp_set_t warps) {
 
 // during cta deallocation
 void barrier_set_t::deallocate_barrier(unsigned cta_id) {
+  printf("deallocate_barrier1\n");
+  printf("deallocate_barrier2\n");
   cta_to_warp_t::iterator w = m_cta_to_warps.find(cta_id);
+  
   if (w == m_cta_to_warps.end()) return;
   warp_set_t warps = w->second;
   warp_set_t at_barrier = warps & m_warp_at_barrier;
@@ -3838,6 +3843,10 @@ void barrier_set_t::deallocate_barrier(unsigned cta_id) {
 // individual warp hits barrier
 void barrier_set_t::warp_reaches_barrier(unsigned cta_id, unsigned warp_id,
                                          warp_inst_t *inst) {
+      if(m_shader->get_sid()==29){
+                                        
+  printf("-----------------------\nAt warp_reaches_barrier warp %d\n",warp_id);
+      }
   barrier_type bar_type = inst->bar_type;
   unsigned bar_id = inst->bar_id;
   unsigned bar_count = inst->bar_count;
@@ -3882,14 +3891,28 @@ void barrier_set_t::warp_reaches_barrier(unsigned cta_id, unsigned warp_id,
       }
     }
   }
+    if(m_shader->get_sid()==29){
+  dump();
+  printf("===============================\n");
+    }
 }
 
 // warp reaches exit
 void barrier_set_t::warp_exit(unsigned warp_id) {
   // caller needs to verify all threads in warp are done, e.g., by checking PDOM
   // stack to see it has only one entry during exit_impl()
-  m_warp_active.reset(warp_id);
+    if(m_shader->get_sid()==29){
+  printf("++++++++++++++++\nAt warp_exit warp %d\n",warp_id);
 
+  dump();
+  printf("warp %d m_warp_active %s \n",warp_id,m_warp_active.to_string().c_str());
+  }
+  m_warp_active.reset(warp_id);
+    if(m_shader->get_sid()==29){
+  
+  printf("warp %d m_warp_active %s \n",warp_id,m_warp_active.to_string().c_str());
+  }
+  //}
   // test for barrier release
   cta_to_warp_t::iterator w = m_cta_to_warps.begin();
   for (; w != m_cta_to_warps.end(); ++w) {
@@ -3897,15 +3920,29 @@ void barrier_set_t::warp_exit(unsigned warp_id) {
   }
   warp_set_t warps_in_cta = w->second;
   warp_set_t active = warps_in_cta & m_warp_active;
-
+      if(m_shader->get_sid()==29){
+  
+  printf("warp %d warp in cta %s \n",warp_id,warps_in_cta.to_string().c_str());
+  }
+    if(m_shader->get_sid()==29){
+  
+  printf("active %s exit \n",active.to_string().c_str());
+  }
   for (unsigned i = 0; i < m_max_barriers_per_cta; i++) {
     warp_set_t at_a_specific_barrier = warps_in_cta & m_bar_id_to_warps[i];
+
     if (at_a_specific_barrier == active) {
       // all warps have reached barrier, so release waiting warps...
       m_bar_id_to_warps[i] &= ~at_a_specific_barrier;
       m_warp_at_barrier &= ~at_a_specific_barrier;
     }
   }
+  if(m_shader->get_sid()==29){
+      
+      dump();
+      printf("++++++++++++++++\n\n");
+  }
+  
 }
 
 // assertions
@@ -3949,6 +3986,10 @@ void shader_core_ctx::warp_exit(unsigned warp_id) {
   }
   // if (m_warp[warp_id].get_n_completed() == get_config()->warp_size)
   // if (this->m_simt_stack[warp_id]->get_num_entries() == 0)
+    
+    
+    //
+
   if (done) m_barriers.warp_exit(warp_id);
 }
 
