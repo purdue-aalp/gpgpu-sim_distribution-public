@@ -890,10 +890,17 @@ void shader_core_ctx::decode() {
   if (m_inst_fetch_buffer.m_valid) {
     // decode 1 or 2 instructions and place them into ibuffer
     address_type pc = m_inst_fetch_buffer.m_pc;
+
     const warp_inst_t *pI1 = get_next_inst(m_inst_fetch_buffer.m_warp_id, pc);
+          //        if(this->m_sid==33 && m_inst_fetch_buffer.m_warp_id ==1){
+
+          //   // if(m_warp[m_inst_fetch_buffer.m_warp_id]->functional_done())
+          //     printf("decode warp 1 why %p !!\n",pI1);
+          //  }
+           if (pI1) {
     m_warp[m_inst_fetch_buffer.m_warp_id]->ibuffer_fill(0, pI1);
     m_warp[m_inst_fetch_buffer.m_warp_id]->inc_inst_in_pipeline();
-    if (pI1) {
+    
       m_stats->m_num_decoded_insn[m_sid]++;
       if ((pI1->oprnd_type == INT_OP) ||
           (pI1->oprnd_type == UN_OP)) {  // these counters get added up in mcPat
@@ -940,15 +947,24 @@ void shader_core_ctx::fetch() {
       // find an active warp with space in instruction buffer that is not
       // already waiting on a cache miss and get next 1-2 instructions from
       // i-cache...
+       
+      
       for (unsigned i = 0; i < m_config->max_warps_per_shader; i++) {
         unsigned warp_id =
             (m_last_warp_fetched + 1 + i) % m_config->max_warps_per_shader;
 
         // this code checks if this warp has finished executing and can be
         // reclaimed
+          //  if(this->m_sid==33 && warp_id ==1){
+
+          //   if(m_warp[warp_id]->functional_done())
+          //     printf(" testing warp %d here functional_done() %d stores_done() %d num_inst_in_pipeline() %d !m_scoreboard->pendingWrites(warp_id) %d \n", warp_id,m_warp[warp_id]->functional_done() , m_warp[warp_id]->stores_done() , m_warp[warp_id]->num_inst_in_pipeline(),!m_scoreboard->pendingWrites(warp_id));
+          //  }
+                
         if (m_warp[warp_id]->hardware_done() &&
             !m_scoreboard->pendingWrites(warp_id) &&
             !m_warp[warp_id]->done_exit()) {
+              printf("we are here\n");
           bool did_exit = false;
           for (unsigned t = 0; t < m_config->warp_size; t++) {
             unsigned tid = warp_id * m_config->warp_size + t;
@@ -969,6 +985,7 @@ void shader_core_ctx::fetch() {
           }
           if (did_exit) m_warp[warp_id]->set_done_exit();
           --m_active_warps;
+          // warp_exit(warp_id);
           assert(m_active_warps >= 0);
         }
 
@@ -3821,6 +3838,7 @@ void barrier_set_t::allocate_barrier(unsigned cta_id, warp_set_t warps) {
 void barrier_set_t::deallocate_barrier(unsigned cta_id) {
   printf("deallocate_barrier1\n");
   printf("deallocate_barrier2\n");
+  dump();
   cta_to_warp_t::iterator w = m_cta_to_warps.find(cta_id);
   
   if (w == m_cta_to_warps.end()) return;
@@ -3843,7 +3861,7 @@ void barrier_set_t::deallocate_barrier(unsigned cta_id) {
 // individual warp hits barrier
 void barrier_set_t::warp_reaches_barrier(unsigned cta_id, unsigned warp_id,
                                          warp_inst_t *inst) {
-      if(m_shader->get_sid()==29){
+      if(m_shader->get_sid()==33){
                                         
   printf("-----------------------\nAt warp_reaches_barrier warp %d\n",warp_id);
       }
@@ -3891,7 +3909,7 @@ void barrier_set_t::warp_reaches_barrier(unsigned cta_id, unsigned warp_id,
       }
     }
   }
-    if(m_shader->get_sid()==29){
+    if(m_shader->get_sid()==33){
   dump();
   printf("===============================\n");
     }
@@ -3901,14 +3919,14 @@ void barrier_set_t::warp_reaches_barrier(unsigned cta_id, unsigned warp_id,
 void barrier_set_t::warp_exit(unsigned warp_id) {
   // caller needs to verify all threads in warp are done, e.g., by checking PDOM
   // stack to see it has only one entry during exit_impl()
-    if(m_shader->get_sid()==29){
+    if(m_shader->get_sid()==33){
   printf("++++++++++++++++\nAt warp_exit warp %d\n",warp_id);
 
   dump();
   printf("warp %d m_warp_active %s \n",warp_id,m_warp_active.to_string().c_str());
   }
   m_warp_active.reset(warp_id);
-    if(m_shader->get_sid()==29){
+    if(m_shader->get_sid()==33){
   
   printf("warp %d m_warp_active %s \n",warp_id,m_warp_active.to_string().c_str());
   }
@@ -3920,11 +3938,11 @@ void barrier_set_t::warp_exit(unsigned warp_id) {
   }
   warp_set_t warps_in_cta = w->second;
   warp_set_t active = warps_in_cta & m_warp_active;
-      if(m_shader->get_sid()==29){
+      if(m_shader->get_sid()==33){
   
   printf("warp %d warp in cta %s \n",warp_id,warps_in_cta.to_string().c_str());
   }
-    if(m_shader->get_sid()==29){
+    if(m_shader->get_sid()==33){
   
   printf("active %s exit \n",active.to_string().c_str());
   }
@@ -3937,7 +3955,7 @@ void barrier_set_t::warp_exit(unsigned warp_id) {
       m_warp_at_barrier &= ~at_a_specific_barrier;
     }
   }
-  if(m_shader->get_sid()==29){
+  if(m_shader->get_sid()==33){
       
       dump();
       printf("++++++++++++++++\n\n");
