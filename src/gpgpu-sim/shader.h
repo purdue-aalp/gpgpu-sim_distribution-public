@@ -637,7 +637,27 @@ class swl_scheduler : public scheduler_unit {
   unsigned m_num_warps_to_limit;
 };
 
-class opndcoll_rfu_t {  // operand collector based register file unit
+class opndcoll_base_t {
+ public:
+  typedef std::vector<register_set *> port_vector_t;
+  typedef std::vector<unsigned int> uint_vector_t;
+  opndcoll_base_t(){};
+  virtual void add_cu_set(unsigned cu_set, unsigned num_cu, unsigned num_dispatch) = 0;
+  virtual void init(unsigned num_banks, shader_core_ctx *shader) = 0;
+  virtual bool writeback(warp_inst_t &warp) = 0;
+  virtual void step() = 0;
+  virtual void dump(FILE *fp) const = 0;
+  virtual void add_port(port_vector_t &input, port_vector_t &ouput,
+                uint_vector_t cu_sets) = 0;
+
+};
+
+class abstract_opndcoll_t {
+public:
+  void add_cu_set(unsigned cu_set, unsigned num_cu, unsigned num_dispatch);
+};
+
+class opndcoll_rfu_t : public opndcoll_base_t {  // operand collector based register file unit
  public:
   // constructors
   opndcoll_rfu_t() {
@@ -645,24 +665,22 @@ class opndcoll_rfu_t {  // operand collector based register file unit
     m_shader = NULL;
     m_initialized = false;
   }
-  void add_cu_set(unsigned cu_set, unsigned num_cu, unsigned num_dispatch);
-  typedef std::vector<register_set *> port_vector_t;
-  typedef std::vector<unsigned int> uint_vector_t;
-  void add_port(port_vector_t &input, port_vector_t &ouput,
-                uint_vector_t cu_sets);
-  void init(unsigned num_banks, shader_core_ctx *shader);
+  virtual void add_cu_set(unsigned cu_set, unsigned num_cu, unsigned num_dispatch) override;
+  virtual void add_port(port_vector_t &input, port_vector_t &ouput,
+                uint_vector_t cu_sets) override;
+  virtual void init(unsigned num_banks, shader_core_ctx *shader) override;
 
   // modifiers
-  bool writeback(warp_inst_t &warp);
+  virtual bool writeback(warp_inst_t &warp) override;
 
-  void step() {
+  virtual void step() override {
     dispatch_ready_cu();
     allocate_reads();
     for (unsigned p = 0; p < m_in_ports.size(); p++) allocate_cu(p);
     process_banks();
   }
 
-  void dump(FILE *fp) const {
+  virtual void dump(FILE *fp) const override {
     fprintf(fp, "\n");
     fprintf(fp, "Operand Collector State:\n");
     for (unsigned n = 0; n < m_cu.size(); n++) {
@@ -957,7 +975,7 @@ class opndcoll_rfu_t {  // operand collector based register file unit
 
     // modifiers
     void init(unsigned n, unsigned num_banks, const core_config *config,
-              opndcoll_rfu_t *rfu, bool m_sub_core_model, unsigned reg_id,
+              opndcoll_base_t *rfu, bool m_sub_core_model, unsigned reg_id,
               unsigned num_banks_per_sched);
     bool allocate(register_set *pipeline_reg, register_set *output_reg);
 
@@ -977,7 +995,7 @@ class opndcoll_rfu_t {  // operand collector based register file unit
     op_t *m_src_op;
     std::bitset<MAX_REG_OPERANDS * 2> m_not_ready;
     unsigned m_num_banks;
-    opndcoll_rfu_t *m_rfu;
+    opndcoll_base_t *m_rfu;
 
     unsigned m_num_banks_per_sched;
     bool m_sub_core_model;
@@ -1347,7 +1365,7 @@ class ldst_unit : public pipelined_simd_unit {
  public:
   ldst_unit(mem_fetch_interface *icnt,
             shader_core_mem_fetch_allocator *mf_allocator,
-            shader_core_ctx *core, opndcoll_rfu_t *operand_collector,
+            shader_core_ctx *core, opndcoll_base_t *operand_collector,
             Scoreboard *scoreboard, const shader_core_config *config,
             const memory_config *mem_config, class shader_core_stats *stats,
             unsigned sid, unsigned tpc, gpgpu_sim *gpu);
@@ -1411,13 +1429,13 @@ class ldst_unit : public pipelined_simd_unit {
  protected:
   ldst_unit(mem_fetch_interface *icnt,
             shader_core_mem_fetch_allocator *mf_allocator,
-            shader_core_ctx *core, opndcoll_rfu_t *operand_collector,
+            shader_core_ctx *core, opndcoll_base_t *operand_collector,
             Scoreboard *scoreboard, const shader_core_config *config,
             const memory_config *mem_config, shader_core_stats *stats,
             unsigned sid, unsigned tpc, l1_cache *new_l1d_cache);
   void init(mem_fetch_interface *icnt,
             shader_core_mem_fetch_allocator *mf_allocator,
-            shader_core_ctx *core, opndcoll_rfu_t *operand_collector,
+            shader_core_ctx *core, opndcoll_base_t *operand_collector,
             Scoreboard *scoreboard, const shader_core_config *config,
             const memory_config *mem_config, shader_core_stats *stats,
             unsigned sid, unsigned tpc);
@@ -1456,7 +1474,7 @@ class ldst_unit : public pipelined_simd_unit {
            std::map<unsigned /*regnum*/, unsigned /*count*/>>
       m_pending_writes;
   std::list<mem_fetch *> m_response_fifo;
-  opndcoll_rfu_t *m_operand_collector;
+  opndcoll_base_t *m_operand_collector;
   Scoreboard *m_scoreboard;
 
   mem_fetch *m_next_global;
@@ -2532,7 +2550,7 @@ class shader_core_ctx : public core_t {
   ifetch_buffer_t m_inst_fetch_buffer;
   std::vector<register_set> m_pipeline_reg;
   Scoreboard *m_scoreboard;
-  opndcoll_rfu_t m_operand_collector;
+  opndcoll_base_t *m_operand_collector;
   int m_active_warps;
   std::vector<register_set *> m_specilized_dispatch_reg;
 
