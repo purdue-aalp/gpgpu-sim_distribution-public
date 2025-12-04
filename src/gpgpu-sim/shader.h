@@ -638,6 +638,7 @@ class swl_scheduler : public scheduler_unit {
 };
 
 class opndcoll_base_t {
+  
  public:
   typedef std::vector<register_set *> port_vector_t;
   typedef std::vector<unsigned int> uint_vector_t;
@@ -647,14 +648,38 @@ class opndcoll_base_t {
   virtual bool writeback(warp_inst_t &warp) = 0;
   virtual void step() = 0;
   virtual void dump(FILE *fp) const = 0;
-  virtual void add_port(port_vector_t &input, port_vector_t &ouput,
-                uint_vector_t cu_sets) = 0;
+  virtual void add_port(port_vector_t &input, port_vector_t &output,
+                        uint_vector_t cu_sets) = 0;
 
+ protected:
+  class input_port_t {
+   public:
+    input_port_t(port_vector_t &input, port_vector_t &output,
+                 uint_vector_t cu_sets)
+        : m_in(input), m_out(output), m_cu_sets(cu_sets) {
+      assert(input.size() == output.size());
+      assert(not m_cu_sets.empty());
+    }
+    // private:
+    port_vector_t m_in, m_out;
+    uint_vector_t m_cu_sets;
+  };
+
+  std::vector<input_port_t> m_in_ports;
+  shader_core_ctx *m_shader;
 };
 
-class abstract_opndcoll_t {
-public:
+class opndcoll_simple_t : public opndcoll_base_t {  // simple operand collector
+ public:
   void add_cu_set(unsigned cu_set, unsigned num_cu, unsigned num_dispatch);
+  void init(unsigned num_banks, shader_core_ctx *shader);
+  bool writeback(warp_inst_t &warp);
+  void step();
+  void dump(FILE *fp) const;
+  void add_port(port_vector_t &input, port_vector_t &ouput,
+                uint_vector_t cu_sets);
+  private:
+  warp_inst_t *m_swap_buffer;
 };
 
 class opndcoll_rfu_t : public opndcoll_base_t {  // operand collector based register file unit
@@ -934,19 +959,6 @@ class opndcoll_rfu_t : public opndcoll_base_t {  // operand collector based regi
     int **_request;
   };
 
-  class input_port_t {
-   public:
-    input_port_t(port_vector_t &input, port_vector_t &output,
-                 uint_vector_t cu_sets)
-        : m_in(input), m_out(output), m_cu_sets(cu_sets) {
-      assert(input.size() == output.size());
-      assert(not m_cu_sets.empty());
-    }
-    // private:
-    port_vector_t m_in, m_out;
-    uint_vector_t m_cu_sets;
-  };
-
   class collector_unit_t {
    public:
     // constructors
@@ -1059,8 +1071,6 @@ class opndcoll_rfu_t : public opndcoll_base_t {  // operand collector based regi
   // std::vector<warp_inst_t**> m_output;
   // std::vector<unsigned> m_num_collector_units;
   // warp_inst_t **m_alu_port;
-
-  std::vector<input_port_t> m_in_ports;
   typedef std::map<unsigned /* collector set */,
                    std::vector<collector_unit_t> /*collector sets*/>
       cu_sets_t;

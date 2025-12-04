@@ -273,7 +273,14 @@ void shader_core_ctx::create_exec_pipeline() {
   enum { SP_CUS, DP_CUS, SFU_CUS, TENSOR_CORE_CUS, INT_CUS, MEM_CUS, GEN_CUS };
 
   // Initialize operand collector with concrete type
-  m_operand_collector = static_cast<opndcoll_base_t*>(new opndcoll_rfu_t());
+  unsigned num_sets = 0;
+  if (m_config->opndcoll_model == OPNDCOLL_TYPE::DETAILED) {
+    m_operand_collector = static_cast<opndcoll_base_t*>(new opndcoll_rfu_t());
+    num_sets = m_config->gpgpu_operand_collector_num_in_ports_gen;
+  } else {
+    m_operand_collector = static_cast<opndcoll_base_t*>(new opndcoll_simple_t());
+    num_sets = 1;
+  }
 
   opndcoll_rfu_t::port_vector_t in_ports;
   opndcoll_rfu_t::port_vector_t out_ports;
@@ -284,8 +291,7 @@ void shader_core_ctx::create_exec_pipeline() {
       GEN_CUS, m_config->gpgpu_operand_collector_num_units_gen,
       m_config->gpgpu_operand_collector_num_out_ports_gen);
 
-  for (unsigned i = 0; i < m_config->gpgpu_operand_collector_num_in_ports_gen;
-       i++) {
+  for (unsigned i = 0; i < num_sets; i++) {
     in_ports.push_back(&m_pipeline_reg[ID_OC_SP]);
     in_ports.push_back(&m_pipeline_reg[ID_OC_SFU]);
     in_ports.push_back(&m_pipeline_reg[ID_OC_MEM]);
@@ -4213,6 +4219,7 @@ void opndcoll_rfu_t::init(unsigned num_banks, shader_core_ctx *shader) {
   for (unsigned j = 0; j < m_dispatch_units.size(); j++) {
     m_dispatch_units[j].init(sub_core_model, m_num_warp_scheds);
   }
+  m_shader = shader;
   m_initialized = true;
 }
 
@@ -4933,4 +4940,47 @@ void exec_shader_core_ctx::checkExecutionStatusAndUpdate(warp_inst_t &inst,
       cflog_update_thread_pc(m_sid, tid, pc);
     }
   }
+}
+void opndcoll_simple_t::add_cu_set(unsigned cu_set, unsigned num_cu,
+                                     unsigned num_dispatch) {
+  // do nothing
+}
+
+void opndcoll_simple_t::init(unsigned num_banks, shader_core_ctx *shader) {
+  m_swap_buffer = new warp_inst_t(shader->get_config());
+  m_shader = shader;
+}
+
+bool opndcoll_simple_t::writeback(warp_inst_t &warp) {
+  return true;
+}
+
+void opndcoll_simple_t::step() {
+  // simply forward from input to output
+  bool sub_core_model = m_shader->get_config()->sub_core_model;
+  assert(m_in_ports.size() == 1);  // simple model only has one input port
+  input_port_t &ports = m_in_ports[0];
+  for (unsigned i = 0; i < ports.m_in.size(); i++) {
+    register_set *in = ports.m_in[i];
+    register_set *out = ports.m_out[i];
+    std::vector<warp_inst_t *> &regs = in->get_regs();
+    for (unsigned reg_id = 0; reg_id < regs.size(); reg_id++) {
+      warp_inst_t *inst = regs[reg_id];
+      if (inst->empty()) {
+        continue;
+      }
+      if (out->has_free(sub_core_model, reg_id)) {
+        in->move_out_to(sub_core_model, reg_id, m_swap_buffer);
+        out->move_in(sub_core_model, reg_id, m_swap_buffer);
+      }
+    }
+  }
+}
+
+void opndcoll_simple_t::dump(FILE *fp) const {
+  // do nothing
+}
+void opndcoll_simple_t::add_port(port_vector_t &input, port_vector_t &output,
+                                 uint_vector_t cu_sets) {
+  m_in_ports.push_back(input_port_t(input, output, cu_sets));
 }

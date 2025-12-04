@@ -381,6 +381,8 @@ class kernel_info_t {
                                  // counted in the gpu_cycle
 };
 
+enum class OPNDCOLL_TYPE { DETAILED = 0, SIMPLE };
+
 class core_config {
  public:
   core_config(gpgpu_context *ctx) {
@@ -427,6 +429,7 @@ class core_config {
   bool gmem_skip_L1D;  // on = global memory access always skip the L1 cache
 
   bool adaptive_cache_config;
+  OPNDCOLL_TYPE opndcoll_model;
 };
 
 // bounded stack that implements simt reconvergence using pdom mechanism from
@@ -1527,6 +1530,7 @@ class register_set {
   }
 
   unsigned get_size() { return regs.size(); }
+  std::vector<warp_inst_t *> &get_regs() { return regs; }
 
  private:
   std::vector<warp_inst_t *> regs;
