@@ -3412,17 +3412,13 @@ void ldst_unit::print(FILE *fout) const {
       "Last LD/ST writeback @ %llu + %llu (gpu_sim_cycle+gpu_tot_sim_cycle)\n",
       m_last_inst_gpu_sim_cycle, m_last_inst_gpu_tot_sim_cycle);
   fprintf(fout, "Pending register writes:\n");
-  std::map<unsigned /*warp_id*/,
-           std::map<unsigned /*regnum*/, unsigned /*count*/> >::const_iterator
-      w;
-  for (w = m_pending_writes.begin(); w != m_pending_writes.end(); w++) {
+  for (auto w = m_pending_writes.begin(); w != m_pending_writes.end(); w++) {
     unsigned warp_id = w->first;
-    const std::map<unsigned /*regnum*/, unsigned /*count*/> &warp_info =
+    const auto &warp_info =
         w->second;
     if (warp_info.empty()) continue;
     fprintf(fout, "  w%2u : ", warp_id);
-    std::map<unsigned /*regnum*/, unsigned /*count*/>::const_iterator r;
-    for (r = warp_info.begin(); r != warp_info.end(); ++r) {
+    for (auto r = warp_info.begin(); r != warp_info.end(); ++r) {
       fprintf(fout, "  %u(%u)", r->first, r->second);
     }
     fprintf(fout, "\n");

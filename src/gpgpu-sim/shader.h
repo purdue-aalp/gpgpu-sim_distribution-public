@@ -45,6 +45,7 @@
 #include <set>
 #include <utility>
 #include <vector>
+#include <unordered_map>
 
 // #include "../cuda-sim/ptx.tab.h"
 
@@ -1391,9 +1392,9 @@ class ldst_unit : public pipelined_simd_unit {
   /* A multi-level map: unsigned (warp_id) -> unsigned (pc) -> unsigned (addr)
    * -> unsigned (count)
    */
-  std::map<unsigned /*warp_id*/,
-           std::map<unsigned /*pc*/,
-                    std::map<unsigned /*addr*/, unsigned /*count*/>>>
+  std::unordered_map<unsigned /*warp_id*/,
+           std::unordered_map<unsigned /*pc*/,
+                    std::unordered_map<unsigned /*addr*/, unsigned /*count*/>>>
       m_pending_ldgsts;
   // modifiers
   virtual void issue(register_set &inst);
@@ -1485,8 +1486,8 @@ class ldst_unit : public pipelined_simd_unit {
   tex_cache *m_L1T;        // texture cache
   read_only_cache *m_L1C;  // constant cache
   l1_cache *m_L1D;         // data cache
-  std::map<unsigned /*warp_id*/,
-           std::map<unsigned /*regnum*/, unsigned /*count*/>>
+  std::unordered_map<unsigned /*warp_id*/,
+           std::unordered_map<unsigned /*regnum*/, unsigned /*count*/>>
       m_pending_writes;
   std::deque<mem_fetch *> m_response_fifo;
   opndcoll_base_t *m_operand_collector;

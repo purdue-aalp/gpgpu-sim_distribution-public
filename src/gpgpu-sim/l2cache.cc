@@ -629,7 +629,7 @@ void memory_sub_partition::print_cache_stat(unsigned &accesses,
 void memory_sub_partition::print(FILE *fp) const {
   if (!m_request_tracker.empty()) {
     fprintf(fp, "Memory Sub Parition %u: pending memory requests:\n", m_id);
-    for (std::set<mem_fetch *>::const_iterator r = m_request_tracker.begin();
+    for (auto r = m_request_tracker.begin();
          r != m_request_tracker.end(); ++r) {
       mem_fetch *mf = *r;
       if (mf)

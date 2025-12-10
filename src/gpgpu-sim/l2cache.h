@@ -37,6 +37,7 @@
 
 #include <list>
 #include <queue>
+#include <unordered_set>
 
 class mem_fetch;
 
@@ -234,7 +235,7 @@ class memory_sub_partition {
 
   class memory_stats_t *m_stats;
 
-  std::set<mem_fetch *> m_request_tracker;
+  std::unordered_set<mem_fetch *> m_request_tracker;
 
   friend class L2interface;
 
