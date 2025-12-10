@@ -1217,8 +1217,13 @@ class pipelined_simd_unit : public simd_function_unit {
   }
 
  protected:
+ struct insn_latency_t {
+    warp_inst_t inst;
+    unsigned long long ready_cycle;
+  };
   unsigned m_pipeline_depth;
   warp_inst_t **m_pipeline_reg;
+  std::deque<insn_latency_t> m_pipeline;
   register_set *m_result_port;
   class shader_core_ctx *m_core;
   unsigned m_issue_reg_id;  // if sub_core_model is enabled we can only issue

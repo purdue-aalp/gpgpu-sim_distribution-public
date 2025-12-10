@@ -2375,7 +2375,7 @@ void simd_function_unit::issue(register_set &source_reg) {
       m_config->sub_core_model && this->is_issue_partitioned();
   source_reg.move_out_to(partition_issue, this->get_issue_reg_id(),
                          m_dispatch_reg);
-  occupied.set(m_dispatch_reg->latency);
+  // occupied.set(m_dispatch_reg->latency);
 }
 
 sfu::sfu(register_set *result_port, const shader_core_config *config,
@@ -2560,26 +2560,27 @@ pipelined_simd_unit::pipelined_simd_unit(register_set *result_port,
 }
 
 void pipelined_simd_unit::cycle() {
-  if (!m_pipeline_reg[0]->empty()) {
-    m_result_port->move_in(m_pipeline_reg[0]);
+  unsigned global_cycle = m_core->get_gpu()->gpu_sim_cycle + 
+                           m_core->get_gpu()->gpu_tot_sim_cycle;
+  if (!m_pipeline.empty() && m_pipeline.front().ready_cycle <= 
+      global_cycle) {
+        // head of pipeline is ready
+    **m_result_port->get_free() = m_pipeline.front().inst;
     assert(active_insts_in_pipeline > 0);
     active_insts_in_pipeline--;
+    m_pipeline.pop_front();
   }
-  if (active_insts_in_pipeline) {
-    for (unsigned stage = 0; (stage + 1) < m_pipeline_depth; stage++)
-      move_warp(m_pipeline_reg[stage], m_pipeline_reg[stage + 1]);
-  }
+
   if (!m_dispatch_reg->empty()) {
-    if (!m_dispatch_reg->dispatch_delay()) {
-      int start_stage =
-          m_dispatch_reg->latency - m_dispatch_reg->initiation_interval;
-      if (m_pipeline_reg[start_stage]->empty()) {
-        move_warp(m_pipeline_reg[start_stage], m_dispatch_reg);
-        active_insts_in_pipeline++;
-      }
+    if (!m_dispatch_reg->dispatch_delay() && 
+        (active_insts_in_pipeline < m_pipeline_depth)) {
+      unsigned ready_cycle = global_cycle +
+                             m_dispatch_reg->latency - m_dispatch_reg->initiation_interval;
+      m_pipeline.push_back({*m_dispatch_reg, ready_cycle});
+      active_insts_in_pipeline++;
+      m_dispatch_reg->clear();
     }
   }
-  occupied >>= 1;
 }
 
 void pipelined_simd_unit::issue(register_set &source_reg) {
