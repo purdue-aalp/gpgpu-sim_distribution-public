@@ -3431,7 +3431,7 @@ void ldst_unit::print(FILE *fout) const {
   if (!m_config->m_L1D_config.disabled()) m_L1D->display_state(fout);
   fprintf(fout, "LD/ST response FIFO (occupancy = %zu):\n",
           m_response_fifo.size());
-  for (std::list<mem_fetch *>::const_iterator i = m_response_fifo.begin();
+  for (auto i = m_response_fifo.begin();
        i != m_response_fifo.end(); i++) {
     const mem_fetch *mf = *i;
     mf->print(fout);
@@ -4837,7 +4837,7 @@ void simt_core_cluster::display_pipeline(unsigned sid, FILE *fout,
   fprintf(fout, "\n");
   fprintf(fout, "Cluster %u pipeline state\n", m_cluster_id);
   fprintf(fout, "Response FIFO (occupancy = %zu):\n", m_response_fifo.size());
-  for (std::list<mem_fetch *>::const_iterator i = m_response_fifo.begin();
+  for (auto i = m_response_fifo.begin();
        i != m_response_fifo.end(); i++) {
     const mem_fetch *mf = *i;
     mf->print(fout);

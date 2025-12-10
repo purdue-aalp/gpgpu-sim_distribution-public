@@ -1483,7 +1483,7 @@ class ldst_unit : public pipelined_simd_unit {
   std::map<unsigned /*warp_id*/,
            std::map<unsigned /*regnum*/, unsigned /*count*/>>
       m_pending_writes;
-  std::list<mem_fetch *> m_response_fifo;
+  std::deque<mem_fetch *> m_response_fifo;
   opndcoll_base_t *m_operand_collector;
   Scoreboard *m_scoreboard;
 
@@ -2700,7 +2700,7 @@ class simt_core_cluster {
 
   unsigned m_cta_issue_next_core;
   std::list<unsigned> m_core_sim_order;
-  std::list<mem_fetch *> m_response_fifo;
+  std::deque<mem_fetch *> m_response_fifo;
 };
 
 class exec_simt_core_cluster : public simt_core_cluster {
