@@ -2563,7 +2563,7 @@ void pipelined_simd_unit::cycle() {
   unsigned global_cycle = m_core->get_gpu()->gpu_sim_cycle + 
                            m_core->get_gpu()->gpu_tot_sim_cycle;
   if (!m_pipeline.empty() && m_pipeline.front().ready_cycle <= 
-      global_cycle) {
+      global_cycle && m_result_port->has_free()) {
         // head of pipeline is ready
     **m_result_port->get_free() = m_pipeline.front().inst;
     assert(active_insts_in_pipeline > 0);
