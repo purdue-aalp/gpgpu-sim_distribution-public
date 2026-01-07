@@ -1250,6 +1250,9 @@ ptx_instruction::ptx_instruction(
   m_atomic_spec = 0;
   m_membar_level = 0;
   m_inst_size = 8;  // bytes
+  // CHANGE
+  m_mbarrier_op = 0;
+  // ENDCHANGE
   int rr = 0;
   std::list<int>::const_iterator i;
   unsigned n = 1;
@@ -1284,6 +1287,14 @@ ptx_instruction::ptx_instruction(
     switch (last_ptx_inst_option) {
       case SYNC_OPTION:
       case ARRIVE_OPTION:
+        // CHANGE: to distinguish between mbarrier and barrier ops
+        if (opcode == MBARRIER_OP) {
+          m_mbarrier_op = last_ptx_inst_option;
+        } else {
+          m_barrier_op = last_ptx_inst_option;
+        }
+        break;
+        // ENDCHANGE
       case RED_OPTION:
         m_barrier_op = last_ptx_inst_option;
         break;
@@ -1443,6 +1454,15 @@ ptx_instruction::ptx_instruction(
       case PRMT_RC16_MODE:
         m_prmt_op = last_ptx_inst_option;
         break;
+      // CHANGE
+      case INIT_OPTION:
+      case TEST_WAIT_OPTION:
+      case TRY_WAIT_OPTION:
+      case PENDING_COUNT_OPTION:
+        // assert(0); // finish this
+        m_mbarrier_op = last_ptx_inst_option;
+        break;
+      // ENDCHANGE
       default:
         assert(0);
         break;

@@ -1168,6 +1168,9 @@ class ptx_instruction : public warp_inst_t {
   unsigned m_barrier_op;
   unsigned m_shfl_op;
   unsigned m_prmt_op;
+  // CHANGE
+  unsigned m_mbarrier_op;
+  // ENDCHANGE
 
   std::list<int> m_scalar_type;
   memory_space_t m_space_spec;

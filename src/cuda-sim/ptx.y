@@ -225,6 +225,13 @@ class ptx_recognizer;
 %token	LEFT_OPTION;
 %token	RIGHT_OPTION;
 
+// CHANGE addtion of mbarrier options
+%token INIT_OPTION;
+%token TEST_WAIT_OPTION;
+%token TRY_WAIT_OPTION;
+%token PENDING_COUNT_OPTION;
+// ENDCHANGE
+
 %type <int_value> function_decl_header
 %type <ptr_value> function_decl
 
@@ -515,6 +522,12 @@ option: type_spec
 	| CLAMP_OPTION { recognizer->add_option(CLAMP_OPTION); }
 	| LEFT_OPTION { recognizer->add_option(LEFT_OPTION); }
 	| RIGHT_OPTION { recognizer->add_option(RIGHT_OPTION); }
+	// CHANGE: add new options
+	| INIT_OPTION { recognizer->add_option(INIT_OPTION); }
+	| TEST_WAIT_OPTION { recognizer->add_option(TEST_WAIT_OPTION); }
+	| TRY_WAIT_OPTION { recognizer->add_option(TRY_WAIT_OPTION); }
+	| PENDING_COUNT_OPTION { recognizer->add_option(PENDING_COUNT_OPTION); }
+	// ENDCHANGE
 	;
 
 atomic_operation_spec: ATOMIC_AND { recognizer->add_option(ATOMIC_AND); }

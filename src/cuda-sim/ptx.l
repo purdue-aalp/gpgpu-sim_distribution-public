@@ -108,6 +108,8 @@ madc	TC; yylval->int_value = MADC_OP; return OPCODE;
 madp	TC; yylval->int_value = MADP_OP; return OPCODE;
 max     TC; yylval->int_value = MAX_OP; return OPCODE;
 membar  TC; yylval->int_value = MEMBAR_OP; return OPCODE;
+mbarrier TC; yylval->int_value = MBARRIER_OP; return OPCODE;
+nanosleep  TC; yylval->int_value = NANOSLEEP_OP; return OPCODE;
 min     TC; yylval->int_value = MIN_OP; return OPCODE;
 mov     TC; yylval->int_value = MOV_OP; return OPCODE;
 mul24   TC; yylval->int_value = MUL24_OP; return OPCODE;
@@ -240,9 +242,16 @@ breakaddr  TC; yylval->int_value = BREAKADDR_OP; return OPCODE;
 \.constptr TC; return CONSTPTR_DIRECTIVE; /* Ptx plus directive for pointer to constant memory */
 \.ptr TC; return PTR_DIRECTIVE; /* Added for new OpenCL genrated code */
 
+\.init      TC; return INIT_OPTION;
+\.test_wait  TC; return TEST_WAIT_OPTION;
+\.try_wait  TC; return TRY_WAIT_OPTION;
+\.pending_count TC; return PENDING_COUNT_OPTION;
+"::cta" TC; return CTA_OPTION;
+
 "%clock" TC; yylval->int_value = CLOCK_REG; return SPECIAL_REGISTER;
 "%halfclock" TC; yylval->int_value = HALFCLOCK_ID; return SPECIAL_REGISTER;
 "%clock64" TC; yylval->int_value = CLOCK64_REG; return SPECIAL_REGISTER;
+"%globaltimer" TC; yylval->int_value = CLOCK64_REG; return SPECIAL_REGISTER;
 "%ctaid" TC; yylval->int_value = CTAID_REG; return SPECIAL_REGISTER;
 "%envreg"[0-9]+ TC; sscanf(yytext+7,"%u",&yylval->int_value); yylval->int_value<<=16; yylval->int_value += ENVREG_REG; return SPECIAL_REGISTER;
 "%gridid" TC; yylval->int_value = GRIDID_REG; return SPECIAL_REGISTER;
