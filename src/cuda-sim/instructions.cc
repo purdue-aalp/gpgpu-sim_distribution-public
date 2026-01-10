@@ -3125,6 +3125,14 @@ void cvta_impl(const ptx_instruction *pI, ptx_thread_info *thread) {
       case global_space:
         to_addr_hw = generic_to_global(from_addr_hw);
         break;
+      case param_space_unclassified:
+      case param_space_kernel:
+      case param_space_local:
+        // For param space, the address maps directly - param space is accessed
+        // via constant cache and for address conversion purposes acts like
+        // global
+        to_addr_hw = from_addr_hw;
+        break;
       default:
         abort();
     }
@@ -3141,7 +3149,20 @@ void cvta_impl(const ptx_instruction *pI, ptx_thread_info *thread) {
       case global_space:
         to_addr_hw = global_to_generic(from_addr_hw);
         break;
+      case param_space_unclassified:
+      case param_space_kernel:
+      case param_space_local:
+        // cvta.param converts param space address to generic
+        // Param space addresses are already in generic/global space for
+        // simulation
+        to_addr_hw = from_addr_hw;
+        break;
       default:
+        printf(
+            "GPGPU-Sim PTX: cvta_impl unhandled space type in non-to branch: "
+            "%d\n",
+            space.get_type());
+        fflush(stdout);
         abort();
     }
   }

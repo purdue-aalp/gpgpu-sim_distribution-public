@@ -348,10 +348,28 @@ void gpgpu_context::gpgpu_ptx_info_load_from_filename(const char *filename,
   std::string ptxas_filename(std::string(filename) + "as");
   char buff[1024], extra_flags[1024];
   extra_flags[0] = 0;
+
+  // Extract full SM target from filename (e.g., "sm_90a" from
+  // "file.sm_90a.ptx") to preserve architecture-specific suffixes like 'a'
+  std::string fname(filename);
+  std::string sm_target;
+  size_t sm_pos = fname.find("sm_");
+  size_t ptx_pos = fname.rfind(".ptx");
+  if (sm_pos != std::string::npos && ptx_pos != std::string::npos &&
+      sm_pos < ptx_pos) {
+    sm_target = fname.substr(sm_pos, ptx_pos - sm_pos);
+  } else {
+    // Fallback to numeric version only
+    char sm_buf[32];
+    snprintf(sm_buf, sizeof(sm_buf), "sm_%u", sm_version);
+    sm_target = sm_buf;
+  }
+
   if (!device_runtime->g_cdp_enabled)
-    snprintf(extra_flags, 1024, "--gpu-name=sm_%u", sm_version);
+    snprintf(extra_flags, 1024, "--gpu-name=%s", sm_target.c_str());
   else
-    snprintf(extra_flags, 1024, "--compile-only --gpu-name=sm_%u", sm_version);
+    snprintf(extra_flags, 1024, "--compile-only --gpu-name=%s",
+             sm_target.c_str());
   snprintf(
       buff, 1024,
       "$CUDA_INSTALL_PATH/bin/ptxas %s -v %s --output-file  /dev/null 2> %s",

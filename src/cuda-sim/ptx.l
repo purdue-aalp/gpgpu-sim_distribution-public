@@ -63,6 +63,19 @@ int ptx_error( yyscan_t yyscanner, ptx_recognizer* recognizer, const char *s );
 %x NOT_OPCODE
 %%
 
+    /* TMA (Tensor Memory Accelerator) instructions - NOP stubs for sm_90+ */
+    /* Use regex patterns to match various TMA instruction variants */
+    /* cp.async.bulk.* - matches all async bulk copy variants including prefetch, commit, wait, reduce */
+cp\.async\.bulk[a-zA-Z0-9_\.:\*]*	TC; yylval->int_value = NOP_OP; return OPCODE;
+    /* cp.reduce.async.bulk.* - matches async bulk reduction variants */
+cp\.reduce\.async\.bulk[a-zA-Z0-9_\.:\*]*	TC; yylval->int_value = NOP_OP; return OPCODE;
+    /* mbarrier.* - matches all memory barrier variants */
+mbarrier[a-zA-Z0-9_\.:\*]*	TC; yylval->int_value = NOP_OP; return OPCODE;
+    /* fence.proxy.* - matches fence proxy variants */
+fence\.proxy[a-zA-Z0-9_\.:\*]*	TC; yylval->int_value = NOP_OP; return OPCODE;
+    /* nanosleep - sm_80+ sleep instruction */
+nanosleep	TC; yylval->int_value = NOP_OP; return OPCODE;
+
 abs	TC; yylval->int_value = ABS_OP; return OPCODE;
 add	TC; yylval->int_value = ADD_OP; return OPCODE;
 addp	TC; yylval->int_value = ADDP_OP; return OPCODE;
@@ -261,6 +274,7 @@ breakaddr  TC; yylval->int_value = BREAKADDR_OP; return OPCODE;
 "%tid"  TC; yylval->int_value = TID_REG; return SPECIAL_REGISTER;
 "%warpid"  TC; yylval->int_value = WARPID_REG; return SPECIAL_REGISTER;
 "WARP_SZ"  TC; yylval->int_value = WARPSZ_REG; return SPECIAL_REGISTER;
+"%globaltimer"  TC; yylval->int_value = GLOBALTIMER_REG; return SPECIAL_REGISTER;
 
 [a-zA-Z_][a-zA-Z0-9_$]*  TC; yylval->string_value = strdup(yytext); return IDENTIFIER;
 [$%][a-zA-Z0-9_$]+  TC; yylval->string_value = strdup(yytext); return IDENTIFIER;

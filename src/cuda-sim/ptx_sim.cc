@@ -250,6 +250,10 @@ unsigned ptx_thread_info::get_builtin(int builtin_id, unsigned dim_mod) {
     }
     case GRIDID_REG:
       return m_gridid;
+    case GLOBALTIMER_REG:
+      // Return simulated global timer (similar to clock64 but nanoseconds)
+      // GPGPUSim clock is 4 times slower - multiply by 4, then scale to ns
+      return (m_gpu->gpu_sim_cycle + m_gpu->gpu_tot_sim_cycle) * 4;
     case LANEID_REG:
       return get_hw_tid() % m_core->get_warp_size();
     case LANEMASK_EQ_REG:

@@ -472,12 +472,22 @@ static int get_app_cuda_version_internal(std::string app_binary) {
   close(fd);
   // Weili: Add way to extract CUDA version information from Balar Vanadis
   // binary (stored as a const string)
+  // Updated to handle multiple ldd output formats:
+  // 1. libcudart.so.12 => /path/to/lib (standard)
+  // 2. /path/to/libcudart.so.12 (direct path)
+  // 3. NEEDED libcudart.so.12 (from objdump)
   std::string app_cuda_version_command =
-      "ldd " + app_binary +
-      " | grep libcudart.so | sed  's/.*libcudart.so.\\(.*\\) =>.*/\\1/' > " +
-      fname + " && strings " + app_binary +
-      " | grep libcudart_vanadis.a | sed  "
-      "'s/.*libcudart_vanadis.a.\\(.*\\)/\\1/' >> " +
+      "(objdump -p " + app_binary +
+      " 2>/dev/null | grep 'NEEDED.*libcudart.so' | sed "
+      "'s/.*libcudart.so\\.\\([0-9]*\\).*/\\1/' ; "
+      "ldd " +
+      app_binary +
+      " 2>/dev/null | grep libcudart.so | sed "
+      "'s/.*libcudart.so\\.\\([0-9]*\\).*/\\1/' ; "
+      "strings " +
+      app_binary +
+      " 2>/dev/null | grep libcudart_vanadis.a | sed "
+      "'s/.*libcudart_vanadis.a\\.\\(.*\\)/\\1/') | head -1 > " +
       fname;
   int res = system(app_cuda_version_command.c_str());
   if (res == -1) {
@@ -4141,6 +4151,68 @@ cudaError_t CUDARTAPI cudaRuntimeGetVersion(int *runtimeVersion) {
     announce_call(__my_func__);
   }
   *runtimeVersion = CUDART_VERSION;
+  return g_last_cudaError = cudaSuccess;
+}
+
+// Stub implementations for TensorMap APIs (TMA support)
+// These are called via cudaGetDriverEntryPointByVersion
+// We use void* because the exact types don't matter for our NOP stubs
+
+static CUresult CUDAAPI stub_cuTensorMapEncodeTiled(
+    void *tensorMap, int tensorDataType, unsigned int tensorRank,
+    void *globalAddress, const void *globalDim, const void *globalStrides,
+    const void *boxDim, const void *elementStrides, int interleave, int swizzle,
+    int l2Promotion, int oobFill) {
+  if (g_debug_execution >= 1) {
+    printf("GPGPU-Sim: stub_cuTensorMapEncodeTiled called (NOP)\n");
+  }
+  // Initialize tensorMap to zeros as a placeholder (128 bytes is typical size)
+  if (tensorMap) {
+    memset(tensorMap, 0, 128);
+  }
+  return CUDA_SUCCESS;
+}
+
+static CUresult CUDAAPI stub_cuTensorMapReplaceAddress(void *tensorMap,
+                                                       void *globalAddress) {
+  if (g_debug_execution >= 1) {
+    printf("GPGPU-Sim: stub_cuTensorMapReplaceAddress called (NOP)\n");
+  }
+  return CUDA_SUCCESS;
+}
+
+__host__ cudaError_t CUDARTAPI cudaGetDriverEntryPointByVersion(
+    const char *symbol, void **funcPtr, unsigned int cudaVersion,
+    unsigned long long flags,
+    enum cudaDriverEntryPointQueryResult *driverStatus) {
+  // Always print for debugging TMA support
+  printf(
+      "GPGPU-Sim: cudaGetDriverEntryPointByVersion(\"%s\", version=%u) "
+      "called\n",
+      symbol ? symbol : "NULL", cudaVersion);
+  fflush(stdout);
+
+  // Provide stub function pointers for TensorMap APIs
+  if (symbol && funcPtr) {
+    if (strcmp(symbol, "cuTensorMapEncodeTiled") == 0) {
+      *funcPtr = (void *)stub_cuTensorMapEncodeTiled;
+      if (driverStatus) *driverStatus = cudaDriverEntryPointSuccess;
+      printf("GPGPU-Sim: Returning stub for cuTensorMapEncodeTiled\n");
+      fflush(stdout);
+      return g_last_cudaError = cudaSuccess;
+    }
+    if (strcmp(symbol, "cuTensorMapReplaceAddress") == 0) {
+      *funcPtr = (void *)stub_cuTensorMapReplaceAddress;
+      if (driverStatus) *driverStatus = cudaDriverEntryPointSuccess;
+      printf("GPGPU-Sim: Returning stub for cuTensorMapReplaceAddress\n");
+      fflush(stdout);
+      return g_last_cudaError = cudaSuccess;
+    }
+    // For other symbols, return not found
+    *funcPtr = NULL;
+    if (driverStatus) *driverStatus = cudaDriverEntryPointSymbolNotFound;
+  }
+
   return g_last_cudaError = cudaSuccess;
 }
 

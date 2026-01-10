@@ -50,20 +50,40 @@ void my_cuda_printf(const char *fmtstr, const char *arg_list) {
         j = 1;
       }
     } else {
-      if (!(c == 'u' || c == 'f' || c == 'd')) {
+      if (!(c == 'u' || c == 'f' || c == 'd' || c == 'p' || c == 'x' ||
+            c == 'X' || c == 'l')) {
         printf(
             "GPGPU-Sim PTX: ERROR ** printf parsing support is limited to %%u, "
-            "%%f, %%d at present");
+            "%%f, %%d, %%p, %%x, %%X at present, found %%%c",
+            c);
         abort();
       }
       buf[j] = c;
       buf[j + 1] = 0;
       void *ptr = (void *)&arg_list[arg_offset];
       // unsigned long long value = ((unsigned long long*)arg_list)[arg_offset];
+      if (c == 'l') {
+        // Handle %l prefix (e.g., %ld, %lu, %lx) - continue to next char
+        j++;
+        continue;
+      }
       if (c == 'u' || c == 'd') {
         acc++;
         fprintf(fp, buf, *((unsigned *)ptr));
         arg_offset += 4;
+      } else if (c == 'x' || c == 'X') {
+        acc++;
+        fprintf(fp, buf, *((unsigned *)ptr));
+        arg_offset += 4;
+      } else if (c == 'p') {
+        // Pointer - 64-bit value
+        if (acc % 2) {
+          arg_offset += 4;
+          ptr = (void *)&arg_list[arg_offset];
+        }
+        fprintf(fp, buf, *((unsigned long long *)ptr));
+        arg_offset += 8;
+        acc = 0;
       } else if (c == 'f') {
         if (acc % 2) {
           arg_offset += 4;
