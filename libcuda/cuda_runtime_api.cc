@@ -4157,6 +4157,9 @@ cudaError_t CUDARTAPI cudaRuntimeGetVersion(int *runtimeVersion) {
 // Stub implementations for TensorMap APIs (TMA support)
 // These are called via cudaGetDriverEntryPointByVersion
 // We use void* because the exact types don't matter for our NOP stubs
+// cudaGetDriverEntryPointByVersion and cudaDriverEntryPointQueryResult
+// were introduced in CUDA 12.0 (12000)
+#if CUDART_VERSION >= 12000
 
 static CUresult CUDAAPI stub_cuTensorMapEncodeTiled(
     void *tensorMap, int tensorDataType, unsigned int tensorRank,
@@ -4215,6 +4218,8 @@ __host__ cudaError_t CUDARTAPI cudaGetDriverEntryPointByVersion(
 
   return g_last_cudaError = cudaSuccess;
 }
+
+#endif  // CUDART_VERSION >= 12000
 
 #if CUDART_VERSION >= 3000
 __host__ cudaError_t CUDARTAPI
