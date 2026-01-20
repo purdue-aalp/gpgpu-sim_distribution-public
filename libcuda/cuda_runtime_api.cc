@@ -3315,12 +3315,32 @@ void cuda_runtime_api::extract_ptx_files_using_cuobjdump_internal(
       printf("ERROR: PTX list is not in correct format");
       exit(0);
     }
+
+    // full arch token, e.g. "sm_90a"
+    std::string arch_str = line.substr(pos1, pos2 - pos1);
+
+    // numeric-only part, e.g. "90" extracted from "sm_90a"
+    std::string vdigits;
+    for (char c : arch_str) {
+      if (isdigit(c)) vdigits.push_back(c);
+    }
+    int version = atoi(vdigits.c_str());
+
+    // existing structure using version as key
+    if (version_filename.find(version) == version_filename.end()) {
+      version_filename[version] = std::set<std::string>();
+    }
+    version_filename[version].insert(line);
+    version_arch[version] = arch_str;
+
+    /* 
     std::string vstr = line.substr(pos1 + 3, pos2 - pos1 - 3);
     int version = atoi(vstr.c_str());
     if (version_filename.find(version) == version_filename.end()) {
       version_filename[version] = std::set<std::string>();
     }
     version_filename[version].insert(line);
+    */
   }
 }
 
@@ -3814,11 +3834,15 @@ void gpgpu_context::cuobjdumpParseBinary(unsigned int handle) {
                       context->get_device()->get_gpgpu());
   for (itr_m = api->version_filename.begin();
        itr_m != api->version_filename.end(); itr_m++) {
+    unsigned version = itr_m->first;
+    const std::string &sm_arch = api->version_arch[version];  // e.g. "sm_90a"
+
     std::set<std::string>::iterator itr_s;
     for (itr_s = itr_m->second.begin(); itr_s != itr_m->second.end(); itr_s++) {
       std::string ptx_filename = *itr_s;
       printf("GPGPU-Sim PTX: Loading PTXInfo from %s\n", ptx_filename.c_str());
-      gpgpu_ptx_info_load_from_filename(ptx_filename.c_str(), itr_m->first);
+      gpgpu_ptx_info_load_from_filename(ptx_filename.c_str(),
+                                        sm_arch.c_str());
     }
   }
   return;

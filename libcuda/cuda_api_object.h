@@ -187,6 +187,8 @@ class cuda_runtime_api {
   std::map<unsigned long long, size_t> g_mallocPtr_Size;
   // maps sm version number to set of filenames
   std::map<unsigned, std::set<std::string> > version_filename;
+  // maps sm version number to full arch string (e.g., "sm_90a")
+  std::map<unsigned, std::string> version_arch;
   std::map<void *, void **> pinned_memory;  // support for pinned memories added
   std::map<void *, size_t> pinned_memory_size;
   glbmap_entry_t *g_glbmap;

@@ -61,6 +61,7 @@ int ptx_error( yyscan_t yyscanner, ptx_recognizer* recognizer, const char *s );
 %s IN_COMMENT
 %x IN_FUNC_DECL
 %x NOT_OPCODE
+%x IN_INST
 %%
 
 abs	TC; yylval->int_value = ABS_OP; return OPCODE;
@@ -75,7 +76,9 @@ bar 	TC; yylval->int_value = BAR_OP; return OPCODE;
 barrier	TC; yylval->int_value = BAR_OP; return OPCODE;
 bfe     TC; yylval->int_value = BFE_OP; return OPCODE;
 bfi     TC; yylval->int_value = BFI_OP; return OPCODE;
-bfind   TC; yylval->int_value = BFIND_OP; return OPCODE;
+bfind   TC; yylval->int_value = BF
+.
+IND_OP; return OPCODE;
 bra     TC; yylval->int_value = BRA_OP; return OPCODE;
 brx     TC; yylval->int_value = BRX_OP; return OPCODE;
 brev    TC; yylval->int_value = BREV_OP; return OPCODE;
@@ -84,6 +87,30 @@ brkpt   TC; yylval->int_value = BRKPT_OP; return OPCODE;
 wmma	TC; yylval->int_value = MMA_OP; return OPCODE;
 wmma\.load	TC; yylval->int_value = MMA_LD_OP; return OPCODE;
 wmma\.store 	TC; yylval->int_value = MMA_ST_OP; return OPCODE;
+
+wgmma\.[^;]*";" {
+    int len = strlen(yytext);
+    recognizer->col += (len - 1);
+    yyless(len - 1);
+    yylval->int_value = NOP_OP;
+    return OPCODE;
+}
+
+mov\.u32[ \t]+%r[0-9]+[ \t]*,[ \t]*[_A-Za-z][0-9A-Za-z_$.]*[ \t]*";" {
+    int len = strlen(yytext);
+    recognizer->col += (len - 1);
+    yyless(len - 1);
+    yylval->int_value = NOP_OP;
+    return OPCODE;
+}
+
+mov\.u64[ \t]+%rd[0-9]+[ \t]*,[ \t]*[_A-Za-z][0-9A-Za-z_$.]*[ \t]*";" {
+    int len = strlen(yytext);
+    recognizer->col += (len - 1);
+    yyless(len - 1);
+    yylval->int_value = NOP_OP;
+    return OPCODE;
+}
 
 call	TC; BEGIN(NOT_OPCODE); yylval->int_value = CALL_OP; return OPCODE; // blocking opcode token in case the callee has the same name as an opcode
 callp   TC; BEGIN(NOT_OPCODE); yylval->int_value = CALLP_OP; return OPCODE;

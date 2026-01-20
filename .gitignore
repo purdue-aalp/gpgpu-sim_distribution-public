@@ -70,3 +70,8 @@ setup
 .DS_Store
 .DS_store
 __pycache__/
+
+# local artifacts
+build/
+sim_run/
+error_log.txt
