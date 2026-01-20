@@ -76,9 +76,7 @@ bar 	TC; yylval->int_value = BAR_OP; return OPCODE;
 barrier	TC; yylval->int_value = BAR_OP; return OPCODE;
 bfe     TC; yylval->int_value = BFE_OP; return OPCODE;
 bfi     TC; yylval->int_value = BFI_OP; return OPCODE;
-bfind   TC; yylval->int_value = BF
-.
-IND_OP; return OPCODE;
+bfind   TC; yylval->int_value = BFIND_OP; return OPCODE;
 bra     TC; yylval->int_value = BRA_OP; return OPCODE;
 brx     TC; yylval->int_value = BRX_OP; return OPCODE;
 brev    TC; yylval->int_value = BREV_OP; return OPCODE;
@@ -96,15 +94,7 @@ wgmma\.[^;]*";" {
     return OPCODE;
 }
 
-mov\.u32[ \t]+%r[0-9]+[ \t]*,[ \t]*[_A-Za-z][0-9A-Za-z_$.]*[ \t]*";" {
-    int len = strlen(yytext);
-    recognizer->col += (len - 1);
-    yyless(len - 1);
-    yylval->int_value = NOP_OP;
-    return OPCODE;
-}
-
-mov\.u64[ \t]+%rd[0-9]+[ \t]*,[ \t]*[_A-Za-z][0-9A-Za-z_$.]*[ \t]*";" {
+mov\.[^ \t;]+[ \t]+%[A-Za-z]+[0-9]+[ \t]*,[ \t]*([_A-Za-z][0-9A-Za-z_$.]*|0[xX][0-9a-fA-F]+|0[fF][0-9a-fA-F]{8}|0[dD][0-9a-fA-F]{16}|[-]?[0-9]+)[ \t]*";" {
     int len = strlen(yytext);
     recognizer->col += (len - 1);
     yyless(len - 1);
