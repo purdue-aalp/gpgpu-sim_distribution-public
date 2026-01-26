@@ -63,17 +63,9 @@ int ptx_error( yyscan_t yyscanner, ptx_recognizer* recognizer, const char *s );
 %x NOT_OPCODE
 %%
 
-    /* TMA (Tensor Memory Accelerator) instructions - NOP stubs for sm_90+ */
-    /* Use regex patterns to match various TMA instruction variants */
-    /* cp.async.bulk.* - matches all async bulk copy variants including prefetch, commit, wait, reduce */
-cp\.async\.bulk[a-zA-Z0-9_\.:\*]*	TC; yylval->int_value = NOP_OP; return OPCODE;
-    /* cp.reduce.async.bulk.* - matches async bulk reduction variants */
-cp\.reduce\.async\.bulk[a-zA-Z0-9_\.:\*]*	TC; yylval->int_value = NOP_OP; return OPCODE;
-    /* mbarrier.* - matches all memory barrier variants */
+cp	TC; yylval->int_value = NOP_OP; return OPCODE;
 mbarrier[a-zA-Z0-9_\.:\*]*	TC; yylval->int_value = NOP_OP; return OPCODE;
-    /* fence.proxy.* - matches fence proxy variants */
 fence\.proxy[a-zA-Z0-9_\.:\*]*	TC; yylval->int_value = NOP_OP; return OPCODE;
-    /* nanosleep - sm_80+ sleep instruction */
 nanosleep	TC; yylval->int_value = NOP_OP; return OPCODE;
 
 abs	TC; yylval->int_value = ABS_OP; return OPCODE;
@@ -184,7 +176,7 @@ breakaddr  TC; yylval->int_value = BREAKADDR_OP; return OPCODE;
 
 "CPTX_END"	printf("ENDING CUSTOM PTX.\n"); BEGIN(IN_COMMENT);
 
-<INITIAL,NOT_OPCODE,IN_INST,IN_FUNC_DECL>{
+<INITIAL,NOT_OPCODE,IN_FUNC_DECL>{
 \.a\.sync\.aligned TC; yylval->int_value = LOAD_A; return WMMA_DIRECTIVE;
 \.b\.sync\.aligned TC; yylval->int_value = LOAD_B; return WMMA_DIRECTIVE;
 \.c\.sync\.aligned TC; yylval->int_value = LOAD_C; return WMMA_DIRECTIVE;
@@ -236,6 +228,8 @@ breakaddr  TC; yylval->int_value = BREAKADDR_OP; return OPCODE;
 \.reg    TC; return REG_DIRECTIVE;
 \.reqntid TC; return REQNTID_DIRECTIVE;
 \.section TC; return SECTION_DIRECTIVE;
+\.shared::cluster  TC; return CLUSTER_OPTION;
+\.shared::cta  TC; return CTA_OPTION;
 \.shared  TC; return SHARED_DIRECTIVE;
 \.sreg   TC; return SREG_DIRECTIVE;
 \.sstarr TC; return SSTARR_DIRECTIVE;
@@ -317,6 +311,29 @@ breakaddr  TC; yylval->int_value = BREAKADDR_OP; return OPCODE;
 \.v2	TC; return V2_TYPE;
 \.v3	TC; return V3_TYPE;
 \.v4	TC; return V4_TYPE;
+
+	/* TMA (Tensor Memory Accelerator) option tokens - NOP stubs for sm_90+ */
+\.async TC; return ASYNC_OPTION;
+\.bulk TC; return BULK_OPTION;
+\.bulk_group TC; return BULK_GROUP_OPTION;
+\.bytes TC; return BYTES_OPTION;
+\.cluster TC; return CLUSTER_OPTION;
+\.commit_group TC; return COMMIT_GROUP_OPTION;
+\.complete_tx TC; return COMPLETE_TX_OPTION;
+\.expect_tx TC; return EXPECT_TX_OPTION;
+\.L2 TC; return L2_OPTION;
+\.mbarrier::complete_tx::bytes TC; return BYTES_OPTION;
+\.mbarrier::complete_tx TC; return COMPLETE_TX_OPTION;
+\.mbarrier TC; return MBARRIER_OPTION;
+\.prefetch TC; return PREFETCH_OPTION;
+\.read TC; return READ_OPTION;
+\.reduce TC; return REDUCE_OPTION;
+\.relaxed TC; return RELAXED_OPTION;
+\.release TC; return RELEASE_OPTION;
+\.tensor TC; return TENSOR_OPTION;
+\.tile TC; return TILE_OPTION;
+\.wait_group TC; return WAIT_GROUP_OPTION;
+\.write TC; return WRITE_OPTION;
 
 \.half  TC; return HALF_OPTION; /* ptxplus */
 \.cc	TC; return EXTP_OPTION; /* extended precision option */

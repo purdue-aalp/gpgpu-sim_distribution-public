@@ -1443,6 +1443,28 @@ ptx_instruction::ptx_instruction(
       case PRMT_RC16_MODE:
         m_prmt_op = last_ptx_inst_option;
         break;
+      /* TMA options - NOP stubs for sm_90+ */
+      case ASYNC_OPTION:
+      case BULK_OPTION:
+      case BULK_GROUP_OPTION:
+      case BYTES_OPTION:
+      case CLUSTER_OPTION:
+      case COMMIT_GROUP_OPTION:
+      case COMPLETE_TX_OPTION:
+      case EXPECT_TX_OPTION:
+      case L2_OPTION:
+      case MBARRIER_OPTION:
+      case PREFETCH_OPTION:
+      case READ_OPTION:
+      case REDUCE_OPTION:
+      case RELAXED_OPTION:
+      case RELEASE_OPTION:
+      case TENSOR_OPTION:
+      case TILE_OPTION:
+      case WAIT_GROUP_OPTION:
+      case WRITE_OPTION:
+        // TMA options are recognized but ignored (NOP implementation)
+        break;
       default:
         assert(0);
         break;

@@ -149,6 +149,7 @@ class ptx_recognizer;
 %token  MINUS
 %token  PLUS
 %token  COLON
+%token  DOUBLE_COLON
 %token  SEMI_COLON
 %token  EXCLAMATION
 %token  PIPE
@@ -199,6 +200,26 @@ class ptx_recognizer;
 %token  GLOBAL_OPTION
 %token  CTA_OPTION
 %token  SYS_OPTION
+/* TMA (Tensor Memory Accelerator) option tokens - sm_90+ */
+%token  ASYNC_OPTION
+%token  BULK_OPTION
+%token  BULK_GROUP_OPTION
+%token  BYTES_OPTION
+%token  CLUSTER_OPTION
+%token  COMMIT_GROUP_OPTION
+%token  COMPLETE_TX_OPTION
+%token  EXPECT_TX_OPTION
+%token  L2_OPTION
+%token  MBARRIER_OPTION
+%token  PREFETCH_OPTION
+%token  READ_OPTION
+%token  REDUCE_OPTION
+%token  RELAXED_OPTION
+%token  RELEASE_OPTION
+%token  TENSOR_OPTION
+%token  TILE_OPTION
+%token  WAIT_GROUP_OPTION
+%token  WRITE_OPTION
 %token  EXIT_OPTION
 %token  ABS_OPTION
 %token  TO_OPTION
@@ -515,6 +536,26 @@ option: type_spec
 	| CLAMP_OPTION { recognizer->add_option(CLAMP_OPTION); }
 	| LEFT_OPTION { recognizer->add_option(LEFT_OPTION); }
 	| RIGHT_OPTION { recognizer->add_option(RIGHT_OPTION); }
+	/* TMA options (NOP for sm_90+) */
+	| ASYNC_OPTION { recognizer->add_option(ASYNC_OPTION); }
+	| BULK_OPTION { recognizer->add_option(BULK_OPTION); }
+	| BULK_GROUP_OPTION { recognizer->add_option(BULK_GROUP_OPTION); }
+	| BYTES_OPTION { recognizer->add_option(BYTES_OPTION); }
+	| CLUSTER_OPTION { recognizer->add_option(CLUSTER_OPTION); }
+	| COMMIT_GROUP_OPTION { recognizer->add_option(COMMIT_GROUP_OPTION); }
+	| COMPLETE_TX_OPTION { recognizer->add_option(COMPLETE_TX_OPTION); }
+	| EXPECT_TX_OPTION { recognizer->add_option(EXPECT_TX_OPTION); }
+	| L2_OPTION { recognizer->add_option(L2_OPTION); }
+	| MBARRIER_OPTION { recognizer->add_option(MBARRIER_OPTION); }
+	| PREFETCH_OPTION { recognizer->add_option(PREFETCH_OPTION); }
+	| READ_OPTION { recognizer->add_option(READ_OPTION); }
+	| REDUCE_OPTION { recognizer->add_option(REDUCE_OPTION); }
+	| RELAXED_OPTION { recognizer->add_option(RELAXED_OPTION); }
+	| RELEASE_OPTION { recognizer->add_option(RELEASE_OPTION); }
+	| TENSOR_OPTION { recognizer->add_option(TENSOR_OPTION); }
+	| TILE_OPTION { recognizer->add_option(TILE_OPTION); }
+	| WAIT_GROUP_OPTION { recognizer->add_option(WAIT_GROUP_OPTION); }
+	| WRITE_OPTION { recognizer->add_option(WRITE_OPTION); }
 	;
 
 atomic_operation_spec: ATOMIC_AND { recognizer->add_option(ATOMIC_AND); }
